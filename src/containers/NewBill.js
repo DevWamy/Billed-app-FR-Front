@@ -61,7 +61,7 @@ export default class NewBill {
             //on réinitialise la valeur à 0.
             e.target.value = '';
             // Et on affiche le message d'ereur
-            errorMessage.textContent = 'Fichier au format JPG, JPEG ou PNG uniquement';
+            errorMessage.textContent = 'Fichier au format .jpg, .jpeg ou .png uniquement';
             errorMessage.classList.add('show');
         }
     };
