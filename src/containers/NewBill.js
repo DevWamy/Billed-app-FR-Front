@@ -22,9 +22,9 @@ export default class NewBill {
 
         const file = this.document.querySelector(`input[data-testid="file"]`).files[0];
 
-        // récupere l'extention du fichier
+        // On récupère l'extention du fichier,
         const fileExtension = file.name.match(/\.[0-9a-z]+$/i)[0];
-        // on authorise seulement les formats png, jpg, jpeg
+        // on autorise seulement les formats png, jpg, jpeg
         const authorizedImages = ['.png', '.jpg', '.jpeg'];
         const errorMessage = document.querySelector('[data-testid="file-error-message"]');
 
@@ -35,9 +35,9 @@ export default class NewBill {
         formData.append('file', file);
         formData.append('email', email);
 
-        // si on à une image autorisée
+        // si on a une image au format autorisé,
         if (authorizedImages.includes(fileExtension)) {
-            // hide the error message
+            // on cache le message d'erreur
             errorMessage.classList.remove('show');
             errorMessage.textContent = '';
 
@@ -56,7 +56,7 @@ export default class NewBill {
                 })
                 .catch((error) => console.error(error));
         }
-        // si l'image n'est pas bonne
+        // Sinon, si l'image n'est pas au bon format,
         else {
             //on réinitialise la valeur à 0.
             e.target.value = '';

@@ -28,8 +28,8 @@ describe('Given I am connected as an employee', () => {
             await waitFor(() => screen.getByTestId('icon-window'));
             const windowIcon = screen.getByTestId('icon-window');
             //to-do write expect expression
-            //Il manquait le resultat attendu.
-            expect(windowIcon).toBeTruthy();
+            //ICI on attend que la classe sur windowIcon soit active-icon (et pas seulement vraie).
+            expect(windowIcon.className).toBe('active-icon');
         });
         test('Then bills should be ordered from earliest to latest', () => {
             document.body.innerHTML = BillsUI({ data: bills });
