@@ -142,9 +142,6 @@ describe('When I click on button new-bill', () => {
 describe('When I am on Bills Page and I click on the icon Eye', () => {
     //La modale avec la piece justificative apparaît
     test('Then modal with supporting documents appears', () => {
-        //La modale est dans $.fn.modal ?, jest.fn() = fonction simulée
-        $.fn.modal = jest.fn(); // Prevent jQuery error
-
         //aiguille les routes des fichiers js.
         const onNavigate = (pathname) => {
             document.body.innerHTML = ROUTES({ pathname });
@@ -156,6 +153,9 @@ describe('When I am on Bills Page and I click on the icon Eye', () => {
         // Définit l'utilisateur comme employé dans le localStorage
         // JSON.stringify = Renvoie une chaîne de caractère qui est du json.
         window.localStorage.setItem('user', JSON.stringify({ type: 'Employee' }));
+
+        //La modale est dans $.fn.modal ?, jest.fn() = fonction simulée
+        $.fn.modal = jest.fn(); // Prevent jQuery error
 
         //afficher les factures triées
         const html = BillsUI({ data: bills?.sort((a, b) => (a.date < b.date ? 1 : -1)) });
@@ -196,19 +196,37 @@ describe('When I am on Bills Page and I click on the icon Eye', () => {
 // ----- test d'intégration GET -----
 describe('Given I am a user connected as Employee', () => {
     describe('When I navigate to Bills page', () => {
+        //récupère les factures de l'API simulée GET
         test('fetches bills from mock API GET', async () => {
+            // Définit l'utilisateur comme employé dans le localStorage
+            // JSON.stringify = Renvoie une chaîne de caractère qui est du json
             localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
+
+            //Simulation d'une navigation vers une page html.
             const root = document.createElement('div');
             root.setAttribute('id', 'root');
             document.body.append(root);
+
+            //Le router injecte les pages dans le DOM
             router();
+
+            //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
             window.onNavigate(ROUTES_PATH.Bills);
+
+            //Attend que la fonction soit appelée
+            //Ici on s'attend à voir le message mes notes de frais.
             await waitFor(() => expect(screen.getByText('Mes notes de frais')).toBeTruthy());
         });
+
         describe('When an error occurs on API', () => {
+            // beforeEach: pour réaliser des opérations avant chaque test
             beforeEach(() => {
+                //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
                 jest.spyOn(store, 'bills');
+                // permet de définir une propriété d'objet (ici window) et/ou de modifier la valeur et/ou les métadonnées d'une propriété.
                 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+                // Définit l'utilisateur comme employé dans le localStorage
                 window.localStorage.setItem(
                     'user',
                     JSON.stringify({
@@ -216,12 +234,23 @@ describe('Given I am a user connected as Employee', () => {
                         email: 'a@a',
                     }),
                 );
+
+                //Simulation d'une navigation vers une page html.
                 const root = document.createElement('div');
                 root.setAttribute('id', 'root');
                 document.body.appendChild(root);
+
+                //Le router injecte les pages dans le DOM
                 router();
             });
+
+            //récupère les factures de l'API et echoue avec un message 404
             test('fetches bills from an API and fails with 404 message error', async () => {
+                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
+                //de simulation pour un appel à la fonction simulée.
+                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
+                //Ici on appelle la fonction list() de store.js et on simule le rejet de la promesse
+                //Puis création d'un objet qui simule une erreur.
                 store.bills.mockImplementationOnce(() => {
                     return {
                         list: () => {
@@ -229,13 +258,27 @@ describe('Given I am a user connected as Employee', () => {
                         },
                     };
                 });
+
+                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
                 window.onNavigate(ROUTES_PATH.Bills);
+
+                //Lorsque nous passons une fonction à process.nextTick(),
+                //nous demandons au moteur d'appeler cette fonction à la
+                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
                 await new Promise(process.nextTick);
+
+                //On s'attend à voir affichée l'erreur.
                 const message = await screen.getByText(/Erreur 404/);
                 expect(message).toBeTruthy();
             });
 
+            //fetches messages from an API and fails with 500 message error
             test('fetches messages from an API and fails with 500 message error', async () => {
+                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
+                //de simulation pour un appel à la fonction simulée.
+                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
+                //Ici on appelle la fonction list() de store.js et on simule le rejet de la promesse
+                //Puis création d'un objet qui simule une erreur.
                 store.bills.mockImplementationOnce(() => {
                     return {
                         list: () => {
@@ -244,8 +287,13 @@ describe('Given I am a user connected as Employee', () => {
                     };
                 });
 
+                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
                 window.onNavigate(ROUTES_PATH.Bills);
+
+                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
                 await new Promise(process.nextTick);
+
+                //On s'attend à voir affichée l'erreur.
                 const message = await screen?.getByText(/Erreur 500/);
                 expect(message).toBeTruthy();
             });
