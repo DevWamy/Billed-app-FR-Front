@@ -90,20 +90,7 @@ describe('---', () => {
         expect(result.length).toBe(4);
         expect(result[0].type).toBe('Hôtel et logement');
     });
-
-    // test('Then, Error page should be rendered', () => {
-    //     document.body.innerHTML = BillsUI({ error: 'some error message' });
-    //     expect(screen.getAllByText('Erreur')).toBeTruthy();
-    // });
 });
-
-// describe('When I am on Dashboard page but back-end send an error message', () => {
-//     test('Then, Error page should be rendered', () => {
-//         const html = BillsUI({ error: 'some error message' });
-//         document.body.innerHTML = html;
-//         expect(screen.getAllByText('Erreur')).toBeTruthy();
-//     });
-// });
 
 //----- handleClickNewBill -----
 describe('When I click on button new-bill', () => {

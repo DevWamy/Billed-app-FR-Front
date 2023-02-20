@@ -19,8 +19,6 @@ jest.mock('../app/store', () => mockStore);
 describe('Given I am connected as an employee', () => {
     describe('When I am on NewBill Page', () => {
         test('Then mail icon in vertical layout should be highlighted', async () => {
-            // const html = NewBillUI();
-            // document.body.innerHTML = html;
             //to-do write assertion
             Object.defineProperty(window, 'localStorage', { value: localStorageMock });
             window.localStorage.setItem(
@@ -219,5 +217,136 @@ describe('when I submit the form with empty fields', () => {
 
         //On s'attend à la présence du formulaire.
         expect(form).toBeTruthy();
+    });
+});
+
+//-----test d'intégration POST-----
+
+describe('Given I am a user connected as Employee', () => {
+    describe('When I create new bill', () => {
+        test('send bill to mock API POST', async () => {
+            // Définit l'utilisateur comme employé dans le localStorage
+            localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
+
+            //Simulation d'une navigation vers une page html.
+            const root = document.createElement('div');
+            root.setAttribute('id', 'root');
+            document.body.append(root);
+
+            //Le router injecte les pages dans le DOM
+            router();
+
+            //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
+            window.onNavigate(ROUTES_PATH.NewBill);
+
+            //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
+            jest.spyOn(mockStore, 'bills');
+
+            //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
+            //de simulation pour un appel à la fonction simulée.
+            //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
+            //Ici on appelle la fonction create() de store.js et on simule la résolution de la promesse
+            mockStore.bills.mockImplementationOnce(() => {
+                return {
+                    create: (bill) => {
+                        return Promise.resolve();
+                    },
+                };
+            });
+
+            //Lorsque nous passons une fonction à process.nextTick(),
+            //nous demandons au moteur d'appeler cette fonction à la
+            //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
+            await new Promise(process.nextTick);
+
+            //On s'attend à voir affiché le message "mes notes de frais"
+            expect(screen.getByText('Mes notes de frais')).toBeTruthy();
+        });
+        describe('When an error occurs on API', () => {
+            test('send bill to mock API POST', async () => {
+                // Définit l'utilisateur comme employé dans le localStorage
+                localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
+
+                //Simulation d'une navigation vers une page html.
+                const root = document.createElement('div');
+                root.setAttribute('id', 'root');
+                document.body.append(root);
+
+                //Le router injecte les pages dans le DOM
+                router();
+
+                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
+                window.onNavigate(ROUTES_PATH.NewBill);
+
+                //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
+                jest.spyOn(mockStore, 'bills');
+
+                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
+                //de simulation pour un appel à la fonction simulée.
+                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
+                //Ici on appelle la fonction create() de store.js et on simule le rejet de la promesse
+                mockStore.bills.mockImplementationOnce(() => {
+                    return {
+                        create: (bill) => {
+                            return Promise.reject(new Error('Erreur 404'));
+                        },
+                    };
+                });
+                //Lorsque nous passons une fonction à process.nextTick(),
+                //nous demandons au moteur d'appeler cette fonction à la
+                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
+                await new Promise(process.nextTick);
+
+                //Introduction du message "Erreur 404" dans la page.
+                const html = BillsUI({ error: 'Erreur 404' });
+                document.body.innerHTML = html;
+
+                //On s'attend à voir affichée l'erreur.
+                const message = await screen.getByText(/Erreur 404/);
+                expect(message).toBeTruthy();
+            });
+            test('send bill to mock API POST', async () => {
+                // Définit l'utilisateur comme employé dans le localStorage
+                localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
+
+                //Simulation d'une navigation vers une page html.
+                const root = document.createElement('div');
+                root.setAttribute('id', 'root');
+                document.body.append(root);
+
+                //Le router injecte les pages dans le DOM
+                router();
+
+                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
+                window.onNavigate(ROUTES_PATH.NewBill);
+
+                //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
+                jest.spyOn(mockStore, 'bills');
+
+                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
+                //de simulation pour un appel à la fonction simulée.
+                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
+                //Ici on appelle la fonction create() de store.js et on simule le rejet de la promesse
+                mockStore.bills.mockImplementationOnce(() => {
+                    return {
+                        create: (bill) => {
+                            return Promise.reject(new Error('Erreur 500'));
+                        },
+                    };
+                });
+                //Lorsque nous passons une fonction à process.nextTick(),
+                //nous demandons au moteur d'appeler cette fonction à la
+                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
+                await new Promise(process.nextTick);
+
+                //Introduction du message "Erreur 500" dans la page.
+                const html = BillsUI({ error: 'Erreur 500' });
+                document.body.innerHTML = html;
+
+                //On s'attend à voir affichée l'erreur.
+                const message = await screen.getByText(/Erreur 500/);
+                expect(message).toBeTruthy();
+            });
+        });
     });
 });
