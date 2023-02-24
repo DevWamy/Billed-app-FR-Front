@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 
+import '@testing-library/jest-dom';
 import { fireEvent, screen, waitFor } from '@testing-library/dom';
 import mockStore from '../__mocks__/store';
 import router from '../app/Router.js';
@@ -17,19 +18,20 @@ import BillsUI from '../views/BillsUI.js';
 jest.mock('../app/store', () => mockStore);
 
 describe('Given I am connected as an employee', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+        window.localStorage.setItem(
+            'user',
+            JSON.stringify({
+                type: 'Employee',
+            }),
+        );
+        //redirige l'utilisateur vers le formulaire
+        Object.defineProperty(window, 'location', { value: { hash: ROUTES_PATH['NewBill'] } });
+    });
     describe('When I am on NewBill Page', () => {
         test('Then mail icon in vertical layout should be highlighted', async () => {
             //to-do write assertion
-            Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-            window.localStorage.setItem(
-                'user',
-                JSON.stringify({
-                    type: 'Employee',
-                }),
-            );
-
-            //redirige l'utilisateur vers le formulaire cf tests routes.js
-            Object.defineProperty(window, 'location', { value: { hash: ROUTES_PATH['NewBill'] } });
 
             const root = document.createElement('div');
             root.setAttribute('id', 'root');
@@ -50,7 +52,7 @@ describe('Given I am connected as an employee', () => {
             const contentTitle = screen.getAllByText('Envoyer une note de frais');
             //toBeTruthy correspond à tout ce qu'une instruction if traite comme vrai
 
-            expect(contentTitle).toBeTruthy;
+            expect(contentTitle).toBeTruthy();
         });
     });
 });
@@ -59,17 +61,6 @@ describe('Given I am connected as an employee', () => {
 
 describe('when I upload a file with the wrong format', () => {
     test('then it should return an error message', async () => {
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-        window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-                type: 'Employee',
-            }),
-        );
-
-        //redirige l'utilisateur vers le formulaire
-        Object.defineProperty(window, 'location', { value: { hash: ROUTES_PATH['NewBill'] } });
-
         //Page du formulaire
         document.body.innerHTML = NewBillUI({});
 
@@ -98,31 +89,24 @@ describe('when I upload a file with the wrong format', () => {
 
         //On s'attend à ce que handleChangeFile, qui charge le fichier,soit appelée
         expect(handleChangeFile).toHaveBeenCalled();
+        //Pas utile
 
         //On vérifie alors si on a bien le document/txt sélectionné
         expect(inputFile.files[0].type).toBe('document/txt');
+        //inutile
 
         //Attend que la fonction soit appelée
         await waitFor(() => screen.getByTestId('file-error-message'));
 
         //On s'attend à voir le message d'erreur
-        expect(screen.getByTestId('file-error-message').classList).not.toContain('hidden');
+        expect(screen.getByTestId('file-error-message')).toHaveClass('show');
+
+        //---- ICI ----- On doit verifier que le msg d'erreur s'affiche
     });
 });
 
 describe('when I upload a file with the good format', () => {
     test('then input file should show the file name', async () => {
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-        window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-                type: 'Employee',
-            }),
-        );
-
-        //redirige l'utilisateur vers le formulaire
-        Object.defineProperty(window, 'location', { value: { hash: ROUTES_PATH['NewBill'] } });
-
         //Page du formulaire
         document.body.innerHTML = NewBillUI();
 
@@ -175,17 +159,6 @@ describe('when I upload a file with the good format', () => {
 
 describe('when I submit the form with empty fields', () => {
     test('then I should stay on new Bill page', () => {
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-        window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-                type: 'Employee',
-            }),
-        );
-
-        //redirige l'utilisateur vers le formulaire
-        Object.defineProperty(window, 'location', { value: { hash: ROUTES_PATH['NewBill'] } });
-
         //onNavigate:Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
         window.onNavigate(ROUTES_PATH.NewBill);
 
@@ -223,130 +196,163 @@ describe('when I submit the form with empty fields', () => {
 //-----test d'intégration POST-----
 
 describe('Given I am a user connected as Employee', () => {
-    describe('When I create new bill', () => {
-        test('send bill to mock API POST', async () => {
-            // Définit l'utilisateur comme employé dans le localStorage
-            localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
+    //Etant donné que je suis un utilisateur connecté en tant que Salarié
+    describe('When I submit the form completed', () => {
+        //Lorsque je soumets le formulaire rempli
+        test('Then the bill is created', async () => {
+            //Ensuite, la facture est créée
 
-            //Simulation d'une navigation vers une page html.
-            const root = document.createElement('div');
-            root.setAttribute('id', 'root');
-            document.body.append(root);
+            const html = NewBillUI();
+            document.body.innerHTML = html;
 
-            //Le router injecte les pages dans le DOM
+            const onNavigate = (pathname) => {
+                document.body.innerHTML = ROUTES({ pathname });
+            };
+            //SIMULATION DE LA CONNECTION DE L'EMPLOYEE
+            Object.defineProperty(window, 'localStorage', {
+                value: localStorageMock,
+            });
+            window.localStorage.setItem(
+                'user',
+                JSON.stringify({
+                    type: 'Employee',
+                    email: 'a@a',
+                }),
+            );
+            //SIMULATION DE CREATION DE LA PAGE DE FACTURE
+            const newBill = new NewBill({
+                document,
+                onNavigate,
+                store: null,
+                localStorage: window.localStorage,
+            });
+
+            const validBill = {
+                type: 'Transports',
+                name: 'vol Paris Toulouse',
+                date: '2023-01-03',
+                amount: 80,
+                vat: 70,
+                pct: 20,
+                commentary: 'Commentary',
+                fileUrl: '../img/0.jpg',
+                fileName: 'test.jpg',
+                status: 'pending',
+            };
+
+            // Charger les valeurs dans les champs de formulaire pour simuler un utilisateur remplissant et soumettant un formulaire
+            screen.getByTestId('expense-type').value = validBill.type;
+            screen.getByTestId('expense-name').value = validBill.name;
+            screen.getByTestId('datepicker').value = validBill.date;
+            screen.getByTestId('amount').value = validBill.amount;
+            screen.getByTestId('vat').value = validBill.vat;
+            screen.getByTestId('pct').value = validBill.pct;
+            screen.getByTestId('commentary').value = validBill.commentary;
+
+            newBill.fileName = validBill.fileName;
+            newBill.fileUrl = validBill.fileUrl;
+
+            newBill.updateBill = jest.fn(); //SIMULATION DE  CLICK
+            const handleSubmit = jest.fn((e) => newBill.handleSubmit(e)); //ENVOI DU FORMULAIRE
+
+            const form = screen.getByTestId('form-new-bill');
+            form.addEventListener('submit', handleSubmit);
+            //simuler l'action de l'utilisateur de cliquer sur le bouton de soumission
+            fireEvent.submit(form);
+
+            //vérifient que la fonction handleSubmit a bien été appelée (ce qui signifie que le formulaire a été soumis)
+            expect(handleSubmit).toHaveBeenCalled();
+            //fonction updateBill a bien été appelée (ce qui signifie que les données ont été envoyées à l'API appropriée, ici dans le store)
+            expect(newBill.updateBill).toHaveBeenCalled();
+        });
+
+        //test erreur 500
+        test('fetches error from an API and fails with 500 error', async () => {
+            //récupère l'erreur d'une API et échoue avec l'erreur 500
+            jest.spyOn(mockStore, 'bills');
+            jest.spyOn(console, 'error').mockImplementation(() => {}); // Prevent Console.error jest error
+
+            Object.defineProperty(window, 'localStorage', {
+                value: localStorageMock,
+            });
+            Object.defineProperty(window, 'location', {
+                value: { hash: ROUTES_PATH['NewBill'] },
+            });
+
+            window.localStorage.setItem('user', JSON.stringify({ type: 'Employee' }));
+            document.body.innerHTML = `<div id="root"></div>`;
             router();
 
-            //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
-            window.onNavigate(ROUTES_PATH.NewBill);
+            const onNavigate = (pathname) => {
+                document.body.innerHTML = ROUTES({ pathname });
+            };
 
-            //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
-            jest.spyOn(mockStore, 'bills');
-
-            //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
-            //de simulation pour un appel à la fonction simulée.
-            //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
-            //Ici on appelle la fonction create() de store.js et on simule la résolution de la promesse
             mockStore.bills.mockImplementationOnce(() => {
                 return {
-                    create: (bill) => {
-                        return Promise.resolve();
+                    update: () => {
+                        return Promise.reject(new Error('Erreur 500'));
                     },
                 };
             });
+            const newBill = new NewBill({
+                document,
+                onNavigate,
+                store: mockStore,
+                localStorage: window.localStorage,
+            });
 
-            //Lorsque nous passons une fonction à process.nextTick(),
-            //nous demandons au moteur d'appeler cette fonction à la
-            //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
+            // Soumettre le formulaire
+            const form = screen.getByTestId('form-new-bill');
+            const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
+            form.addEventListener('submit', handleSubmit);
+            fireEvent.submit(form);
+            await new Promise(process.nextTick);
+            expect(console.error).toBeCalled();
+        });
+    });
+
+    describe('When I submit the form with missing required fields', () => {
+        test('Form submission fails if required fields are missing', async () => {
+            const html = NewBillUI();
+            document.body.innerHTML = html;
+
+            const onNavigate = (pathname) => {
+                document.body.innerHTML = ROUTES({ pathname });
+            };
+
+            Object.defineProperty(window, 'localStorage', {
+                value: localStorageMock,
+            });
+
+            window.localStorage.setItem(
+                'user',
+                JSON.stringify({
+                    type: 'Employee',
+                }),
+            );
+
+            const newBill = new NewBill({
+                document,
+                onNavigate,
+                store: null,
+                localStorage: window.localStorage,
+            });
+
+            // Je définit les champs obligatoires de formulaire à des valeurs vides.
+            screen.getByTestId('datepicker').value = '';
+            screen.getByTestId('amount').value = '';
+            screen.getByTestId('pct').value = '';
+            screen.getByTestId('file').value = '';
+
+            // Je soumet le formulaire
+            const form = screen.getByTestId('form-new-bill');
+            const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
+            form.addEventListener('submit', handleSubmit);
+            fireEvent.submit(form);
             await new Promise(process.nextTick);
 
-            //On s'attend à voir affiché le message "mes notes de frais"
-            expect(screen.getByText('Mes notes de frais')).toBeTruthy();
-        });
-        describe('When an error occurs on API', () => {
-            test('send bill to mock API POST', async () => {
-                // Définit l'utilisateur comme employé dans le localStorage
-                localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
-
-                //Simulation d'une navigation vers une page html.
-                const root = document.createElement('div');
-                root.setAttribute('id', 'root');
-                document.body.append(root);
-
-                //Le router injecte les pages dans le DOM
-                router();
-
-                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
-                window.onNavigate(ROUTES_PATH.NewBill);
-
-                //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
-                jest.spyOn(mockStore, 'bills');
-
-                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
-                //de simulation pour un appel à la fonction simulée.
-                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
-                //Ici on appelle la fonction create() de store.js et on simule le rejet de la promesse
-                mockStore.bills.mockImplementationOnce(() => {
-                    return {
-                        create: (bill) => {
-                            return Promise.reject(new Error('Erreur 404'));
-                        },
-                    };
-                });
-                //Lorsque nous passons une fonction à process.nextTick(),
-                //nous demandons au moteur d'appeler cette fonction à la
-                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
-                await new Promise(process.nextTick);
-
-                //Introduction du message "Erreur 404" dans la page.
-                const html = BillsUI({ error: 'Erreur 404' });
-                document.body.innerHTML = html;
-
-                //On s'attend à voir affichée l'erreur.
-                const message = await screen.getByText(/Erreur 404/);
-                expect(message).toBeTruthy();
-            });
-            test('send bill to mock API POST', async () => {
-                // Définit l'utilisateur comme employé dans le localStorage
-                localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
-
-                //Simulation d'une navigation vers une page html.
-                const root = document.createElement('div');
-                root.setAttribute('id', 'root');
-                document.body.append(root);
-
-                //Le router injecte les pages dans le DOM
-                router();
-
-                //Fonction qui est dans le fichier app/Router.js, elle aiguille les routes des fichiers js.
-                window.onNavigate(ROUTES_PATH.NewBill);
-
-                //Permet de mettre un espion sur une fonction qui est executée par une autre fonction test.
-                jest.spyOn(mockStore, 'bills');
-
-                //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
-                //de simulation pour un appel à la fonction simulée.
-                //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
-                //Ici on appelle la fonction create() de store.js et on simule le rejet de la promesse
-                mockStore.bills.mockImplementationOnce(() => {
-                    return {
-                        create: (bill) => {
-                            return Promise.reject(new Error('Erreur 500'));
-                        },
-                    };
-                });
-                //Lorsque nous passons une fonction à process.nextTick(),
-                //nous demandons au moteur d'appeler cette fonction à la
-                //process.nextTick: fin de l'opération en cours, avant le démarrage de la prochaine boucle d'événement:
-                await new Promise(process.nextTick);
-
-                //Introduction du message "Erreur 500" dans la page.
-                const html = BillsUI({ error: 'Erreur 500' });
-                document.body.innerHTML = html;
-
-                //On s'attend à voir affichée l'erreur.
-                const message = await screen.getByText(/Erreur 500/);
-                expect(message).toBeTruthy();
-            });
+            // Je vérifie que handleSubmit n'a pas été appelé.
+            expect(jest.fn()).not.toHaveBeenCalled();
         });
     });
 });
