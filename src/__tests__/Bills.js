@@ -33,7 +33,7 @@ describe('Given I am connected as an employee', () => {
             await waitFor(() => screen.getByTestId('icon-window'));
             const windowIcon = screen.getByTestId('icon-window');
             //to-do write expect expression
-            //ICI on attend que la classe sur windowIcon soit active-icon (et pas seulement vraie).
+            //Vérifier que l'icône de la facture soit bien en surbrillance.
             expect(windowIcon.className).toBe('active-icon');
         });
         test('Then bills should be ordered from earliest to latest', () => {
@@ -52,45 +52,6 @@ describe('Given I am connected as an employee', () => {
  * -----ajout nouveaux tests --------------
  * -----------------------------------------
  */
-//----- getBills -----
-describe('---', () => {
-    test('Given we try to get bills without store', () => {
-        const onNavigate = (pathname) => {
-            document.body.innerHTML = ROUTES({ pathname });
-        };
-
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-        window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-                type: 'Admin',
-            }),
-        );
-
-        const bills = new Bills({ document, onNavigate, store: null, localStorage: window.localStorage });
-        const result = bills.getBills();
-        expect(result).toBe(undefined);
-    });
-
-    test('Given we try to get bills with store', async () => {
-        const onNavigate = (pathname) => {
-            document.body.innerHTML = ROUTES({ pathname });
-        };
-
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-        window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-                type: 'Admin',
-            }),
-        );
-
-        const bills = new Bills({ document, onNavigate, store: store, localStorage: window.localStorage });
-        const result = await bills.getBills();
-        expect(result.length).toBe(4);
-        expect(result[0].type).toBe('Hôtel et logement');
-    });
-});
 
 //----- handleClickNewBill -----
 describe('When I click on button new-bill', () => {
@@ -180,11 +141,52 @@ describe('When I am on Bills Page and I click on the icon Eye', () => {
     });
 });
 
+//----- getBills -----
+describe('---', () => {
+    test('Given we try to get bills without store', () => {
+        const onNavigate = (pathname) => {
+            document.body.innerHTML = ROUTES({ pathname });
+        };
+
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+        window.localStorage.setItem(
+            'user',
+            JSON.stringify({
+                type: 'Admin',
+            }),
+        );
+
+        const bills = new Bills({ document, onNavigate, store: null, localStorage: window.localStorage });
+        const result = bills.getBills();
+        expect(result).toBe(undefined);
+    });
+
+    test('Given we try to get bills with store', async () => {
+        const onNavigate = (pathname) => {
+            document.body.innerHTML = ROUTES({ pathname });
+        };
+
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+        window.localStorage.setItem(
+            'user',
+            JSON.stringify({
+                type: 'Admin',
+            }),
+        );
+
+        const bills = new Bills({ document, onNavigate, store: store, localStorage: window.localStorage });
+        const result = await bills.getBills();
+        expect(result.length).toBe(4);
+        expect(result[0].type).toBe('Hôtel et logement');
+    });
+});
+
 // ----- test d'intégration GET -----
+
 describe('Given I am a user connected as Employee', () => {
     describe('When I navigate to Bills page', () => {
         //récupère les factures de l'API simulée GET
-        test('fetches bills from mock API GET', async () => {
+        test('Then fetches bills from mock API GET', async () => {
             // Définit l'utilisateur comme employé dans le localStorage
             // JSON.stringify = Renvoie une chaîne de caractère qui est du json
             localStorage.setItem('user', JSON.stringify({ type: 'Employee', email: 'a@a' }));
@@ -232,7 +234,7 @@ describe('Given I am a user connected as Employee', () => {
             });
 
             //récupère les factures de l'API et echoue avec un message 404
-            test('fetches bills from an API and fails with 404 message error', async () => {
+            test('Then fetches bills from an API and fails with 404 message error', async () => {
                 //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
                 //de simulation pour un appel à la fonction simulée.
                 //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.
@@ -260,7 +262,7 @@ describe('Given I am a user connected as Employee', () => {
             });
 
             //fetches messages from an API and fails with 500 message error
-            test('fetches messages from an API and fails with 500 message error', async () => {
+            test('Then fetches messages from an API and fails with 500 message error', async () => {
                 //mockImplementationOnce: Accepte une fonction qui sera utilisée comme une implémentation
                 //de simulation pour un appel à la fonction simulée.
                 //Peut être enchaîné de sorte que plusieurs appels de fonction produisent des résultats différents.

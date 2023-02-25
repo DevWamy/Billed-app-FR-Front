@@ -69,7 +69,8 @@ export default class {
         this.document = document;
         this.onNavigate = onNavigate;
         this.store = store;
-        //---PROBLEME--- A chaque fois qu'on clique sur une fleche, on ajoute un addEventListener sur toutes les bills, comme il y en a 3 on ajoute un addEventListener sur la meme facture.
+        //---PROBLEME--- A chaque fois qu'on clique sur une fleche, on ajoute un addEventListener sur toutes les bills,
+        // comme il y en a 3 on ajoute un addEventListener sur la meme facture.
         $('#arrow-icon1').click((e) => this.handleShowTickets(e, bills, 1));
         $('#arrow-icon2').click((e) => this.handleShowTickets(e, bills, 2));
         $('#arrow-icon3').click((e) => this.handleShowTickets(e, bills, 3));
@@ -155,11 +156,15 @@ export default class {
             $(`#status-bills-container${this.index}`).html('');
             this.counter++;
         }
-        // ---SOLUTION --- Une fois qu'on a bouclé sur un bills il faut qu'on sache qu'on lui a mis un eventListener pour ne pas avoir à le faire de nouveau.
+        // ---SOLUTION --- Une fois qu'on a bouclé sur un bills il faut qu'on sache qu'on lui a mis un eventListener
+        // pour ne pas avoir à le faire de nouveau.
         bills.forEach((bill) => {
             //Pour pouvoir savoir si on a bouclé sur un elt, si il n'y a pas de eventListener alors on en met un.
+            //Si l'élément HTML de la facture (avec son id) n'a pas encore été associé à un événement "click".
             if (!$(`#open-bill${bill.id}`).data('data-isWithEventListener')) {
+                // Alors on s'assure que si l'utilisateur clique sur l'élément plusieurs fois, l'événement "click" ne sera exécutée qu'une seule fois.
                 $(`#open-bill${bill.id}`).data('data-isWithEventListener', true);
+                //Et on ajout un evenement click sur l'element ce qui appelle la fonction qui edite le ticket.
                 $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills));
             }
         });

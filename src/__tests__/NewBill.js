@@ -50,7 +50,6 @@ describe('Given I am connected as an employee', () => {
 
             //Fonctions qui récupèrent les éléments du DOM créés
             const contentTitle = screen.getAllByText('Envoyer une note de frais');
-            //toBeTruthy correspond à tout ce qu'une instruction if traite comme vrai
 
             expect(contentTitle).toBeTruthy();
         });
@@ -138,7 +137,7 @@ describe('when I upload a file with the good format', () => {
         //Simulation d'une interaction avec l'utilisateur
         userEvent.upload(inputFile, file);
 
-        //On s'attend à ce que handleChangeFile, qui charge le fichier,soit appelée
+        //On s'attend à ce que handleChangeFile, qui charge le fichier soit appelée
         expect(handleChangeFile).toHaveBeenCalled();
 
         //On vérifie alors si on a bien le fichier
